@@ -44,6 +44,18 @@ public class ProductControllerIT {
         result.andExpect(jsonPath("$.content[0].name").value("Macbook Pro"));
         result.andExpect(jsonPath("$.content[0].price").value(1250.0));
         result.andExpect(jsonPath("$.content[0].imgUrl").value("https://raw.githubusercontent.com/devsuperior/dscatalog-resources/master/backend/img/3-big.jpg"));
+    }
 
+    @Test
+    public void findAllShouldRetunrPageWhenParamIsEmpty() throws Exception {
+        ResultActions result = mockMvc
+                .perform(get("/products")
+                        .accept(MediaType.APPLICATION_JSON));
+
+        result.andExpect(status().isOk());
+        result.andExpect(jsonPath("$.content[0].id").value(1L));
+        result.andExpect(jsonPath("$.content[0].name").value("The Lord of the Rings"));
+        result.andExpect(jsonPath("$.content[0].price").value(90.5));
+        result.andExpect(jsonPath("$.content[0].imgUrl").value("https://raw.githubusercontent.com/devsuperior/dscatalog-resources/master/backend/img/1-big.jpg"));
     }
 }
