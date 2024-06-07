@@ -134,6 +134,72 @@ public class ProductControllerIT {
                         .accept(MediaType.APPLICATION_JSON))
                 .andDo(MockMvcResultHandlers.print()); //debugar
         result.andExpect(status().isUnprocessableEntity());
+    }
+    @Test
+    public void insertShouldReturnUnporcessableEntityWhenAdminLoggedAndInvalidDescription422() throws Exception {
+        // 3.	Inserção de produto retorna 422 e mensagens customizadas com dados inválidos quando logado como admin e campo description for inválido
+        product.setDescription("ab");
+        productDTO = new ProductDTO(product);
 
+        String jsonBody = objectMapper.writeValueAsString(productDTO);
+        ResultActions result = mockMvc
+                .perform(post("/products")
+                        .header("Authorization", "Bearer " + adminToken) //obter token de admin
+                        .content(jsonBody)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andDo(MockMvcResultHandlers.print()); //debugar
+        result.andExpect(status().isUnprocessableEntity());
+    }
+
+    @Test
+    public void insertShouldReturnUnporcessableEntityWhenAdminLoggedAndPriceIsNegative422() throws Exception {
+        // 4.	Inserção de produto retorna 422 e mensagens customizadas com dados inválidos quando logado como admin e campo price for negativo
+        product.setPrice(-50.0);
+        productDTO = new ProductDTO(product);
+
+        String jsonBody = objectMapper.writeValueAsString(productDTO);
+        ResultActions result = mockMvc
+                .perform(post("/products")
+                        .header("Authorization", "Bearer " + adminToken) //obter token de admin
+                        .content(jsonBody)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andDo(MockMvcResultHandlers.print()); //debugar
+        result.andExpect(status().isUnprocessableEntity());
+    }
+
+    @Test
+    public void insertShouldReturnUnporcessableEntityWhenAdminLoggedAndPriceIsZero422() throws Exception {
+        // 4.	Inserção de produto retorna 422 e mensagens customizadas com dados inválidos quando logado como admin e campo price for negativo
+        product.setPrice(0.0);
+        productDTO = new ProductDTO(product);
+
+        String jsonBody = objectMapper.writeValueAsString(productDTO);
+        ResultActions result = mockMvc
+                .perform(post("/products")
+                        .header("Authorization", "Bearer " + adminToken) //obter token de admin
+                        .content(jsonBody)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andDo(MockMvcResultHandlers.print()); //debugar
+        result.andExpect(status().isUnprocessableEntity());
+    }
+
+    @Test
+    public void insertShouldReturnUnporcessableEntityWhenAdminLoggedAndProductHasNotCategory422() throws Exception {
+        // 6.	Inserção de produto retorna 422 e mensagens customizadas com dados inválidos quando logado como admin e não tiver categoria associada
+        product.getCategories().clear();
+        productDTO = new ProductDTO(product);
+
+        String jsonBody = objectMapper.writeValueAsString(productDTO);
+        ResultActions result = mockMvc
+                .perform(post("/products")
+                        .header("Authorization", "Bearer " + adminToken) //obter token de admin
+                        .content(jsonBody)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andDo(MockMvcResultHandlers.print()); //debugar
+        result.andExpect(status().isUnprocessableEntity());
     }
 }
