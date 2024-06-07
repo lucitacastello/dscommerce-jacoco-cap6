@@ -98,7 +98,7 @@ public class ProductControllerIT {
 
     //    Problema 2: Inserir produto
     @Test
-    public void insertShouldRetunrProductDTOCreatedWhenAdminLogged() throws Exception {
+    public void insertShouldReturnProductDTOCreatedWhenAdminLogged() throws Exception {
 //      1.	Inserção de produto insere produto com dados válidos quando logado como admin
         String jsonBody = objectMapper.writeValueAsString(productDTO);
         ResultActions result = mockMvc
@@ -116,7 +116,24 @@ public class ProductControllerIT {
         result.andExpect(jsonPath("$.price").value(3999.90));
         result.andExpect(jsonPath("$.imgUrl").value("https://raw.githubusercontent.com/devsuperior/dscatalog-resources/master/backend/img/1-big.jpg"));
         result.andExpect(jsonPath("$.categories[0].id").value(2L));
+    }
 
+
+    @Test
+    public void insertShouldReturnUnporcessableEntityWhenAdminLoggedAndInvalidName422() throws Exception {
+        // 2.Inserção de produto retorna 422 e mensagens customizadas com dados inválidos quando logado como admin e campo name for inválido
+        product.setName("ab");
+        productDTO = new ProductDTO(product);
+
+        String jsonBody = objectMapper.writeValueAsString(productDTO);
+        ResultActions result = mockMvc
+                .perform(post("/products")
+                        .header("Authorization", "Bearer " + adminToken) //obter token de admin
+                        .content(jsonBody)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andDo(MockMvcResultHandlers.print()); //debugar
+        result.andExpect(status().isUnprocessableEntity());
 
     }
 }
