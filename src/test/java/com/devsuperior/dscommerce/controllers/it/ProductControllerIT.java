@@ -202,4 +202,34 @@ public class ProductControllerIT {
                 .andDo(MockMvcResultHandlers.print()); //debugar
         result.andExpect(status().isUnprocessableEntity());
     }
+
+    @Test
+    public void insertShouldReturnForbiddenWhenClientLogged403() throws Exception {
+        // 7.	Inserção de produto retorna 403 quando logado como cliente
+
+        String jsonBody = objectMapper.writeValueAsString(productDTO);
+        ResultActions result = mockMvc
+                .perform(post("/products")
+                        .header("Authorization", "Bearer " + clientToken) //obter token de client
+                        .content(jsonBody)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andDo(MockMvcResultHandlers.print()); //debugar
+        result.andExpect(status().isForbidden());
+    }
+
+    @Test
+    public void insertShouldReturnUnauthorizedWhenInvalidToken401() throws Exception {
+        // 8.	Inserção de produto retorna 401 quando não logado como admin ou cliente
+
+        String jsonBody = objectMapper.writeValueAsString(productDTO);
+        ResultActions result = mockMvc
+                .perform(post("/products")
+                        .header("Authorization", "Bearer " + invalidToken) //obter token de client
+                        .content(jsonBody)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andDo(MockMvcResultHandlers.print()); //debugar
+        result.andExpect(status().isUnauthorized());
+    }
 }
