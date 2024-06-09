@@ -14,8 +14,10 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -41,9 +43,11 @@ public class ProductControllerIT {
     private String adminToken, clientToken, invalidToken;
     private String adminUserName, adminPassword, clientUserName, clientPassword;
 
-    //para usanr no insert
+    //para usar no insert
     private Product product;
     private ProductDTO productDTO;
+
+    private Long existingProductId, nonExistingProductId, dependentProductId;
 
     @BeforeEach
     void setUp() throws Exception {
@@ -68,6 +72,10 @@ public class ProductControllerIT {
         product.getCategories().add(category);
 
         productDTO = new ProductDTO(product);
+
+        existingProductId = 2L;
+        nonExistingProductId = 100L;
+        dependentProductId = 3L;
     }
 
     @Test
@@ -135,6 +143,7 @@ public class ProductControllerIT {
                 .andDo(MockMvcResultHandlers.print()); //debugar
         result.andExpect(status().isUnprocessableEntity());
     }
+
     @Test
     public void insertShouldReturnUnporcessableEntityWhenAdminLoggedAndInvalidDescription422() throws Exception {
         // 3.	Inserção de produto retorna 422 e mensagens customizadas com dados inválidos quando logado como admin e campo description for inválido
@@ -230,6 +239,68 @@ public class ProductControllerIT {
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON))
                 .andDo(MockMvcResultHandlers.print()); //debugar
+        result.andExpect(status().isUnauthorized());
+    }
+
+    //     Problema 3: Deletar produto
+    @Test
+    public void deleteShouldReturnNoContentWhenIdExistsAndAdminLogged204() throws Exception {
+        // 1.	Deleção de produto deleta produto existente quando logado como admin
+
+        ResultActions result = mockMvc
+                .perform(delete("/products/{id}", existingProductId)
+                        .header("Authorization", "Bearer " + adminToken)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andDo(MockMvcResultHandlers.print()); //debuggar
+        result.andExpect(status().isNoContent());
+    }
+
+    @Test
+    public void deleteShouldReturnNotFoundWhenIdDoesNotExistsAndAdminLogged404() throws Exception {
+        // 2.	Deleção de produto retorna 404 para produto inexistente quando logado como admin
+
+        ResultActions result = mockMvc
+                .perform(delete("/products/{id}", nonExistingProductId)
+                        .header("Authorization", "Bearer " + adminToken)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andDo(MockMvcResultHandlers.print()); //debuggar
+        result.andExpect(status().isNotFound());
+    }
+
+    @Test
+    @Transactional(propagation = Propagation.SUPPORTS) //para não dar erro pq é dependente
+    public void deleteShouldReturnBadRequestWhenDependentIdAndAdminLogged400() throws Exception {
+        // 3.	Deleção de produto retorna 400 para produto dependente quando logado como admin
+
+        ResultActions result = mockMvc
+                .perform(delete("/products/{id}", dependentProductId)
+                        .header("Authorization", "Bearer " + adminToken)
+                        .accept(MediaType.APPLICATION_JSON));
+             //   .andDo(MockMvcResultHandlers.print()); //debuggar
+        result.andExpect(status().isBadRequest());
+    }
+
+    @Test
+    public void deleteShouldReturnForbiddenWhenClientLogged403() throws Exception {
+        // 4.	Deleção de produto retorna 403 quando logado como cliente
+
+        ResultActions result = mockMvc
+                .perform(delete("/products/{id}", existingProductId)
+                        .header("Authorization", "Bearer " + clientToken)
+                        .accept(MediaType.APPLICATION_JSON));
+        //   .andDo(MockMvcResultHandlers.print()); //debuggar
+        result.andExpect(status().isForbidden());
+    }
+
+    @Test
+    public void deleteShouldReturnUnauthorizedtWhenExistingIdAndInvalidToken401() throws Exception {
+        // 5.	Deleção de produto retorna 401 quando não logado como admin ou cliente
+
+        ResultActions result = mockMvc
+                .perform(delete("/products/{id}", existingProductId)
+                        .header("Authorization", "Bearer " + invalidToken)
+                        .accept(MediaType.APPLICATION_JSON));
+        //   .andDo(MockMvcResultHandlers.print()); //debuggar
         result.andExpect(status().isUnauthorized());
     }
 }
